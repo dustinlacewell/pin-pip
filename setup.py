@@ -3,10 +3,11 @@ import os
 from distutils.core import setup
 
 setup(
-    name='pin-pip',
-    version='0.2',
+    name='pinpip',
+    version='0.1',
     packages=['pin.plugins'],
     requires=["pip", "pin"],
+    provides=["pinpip"],
     author="Dustin Lacewell",
     author_email="dlacewell@gmail.com",
     url="https://github.com/dustinlacewell/pin-pip",
