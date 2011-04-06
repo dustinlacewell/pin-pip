@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='pinpip',
-    version='0.1.1',
+    version='0.1',
     packages=['pin.plugins'],
     install_requires=["pip", "pin"],
     provides=["pinpip"],
