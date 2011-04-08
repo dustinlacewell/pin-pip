@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='pinpip',
-    version='0.1.3',
+    version='0.1.4',
     packages=['pin', 'pin.plugins'],
     namespace_packages=['pin', 'pin.plugins'],
     provides=["pinpip"],
