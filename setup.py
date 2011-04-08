@@ -1,12 +1,12 @@
 import os
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='pinpip',
-    version='0.1',
-    packages=['pin.plugins'],
-    install_requires=["pip", "pin"],
+    version='0.1.3',
+    packages=['pin', 'pin.plugins'],
+    namespace_packages=['pin', 'pin.plugins'],
     provides=["pinpip"],
     author="Dustin Lacewell",
     author_email="dlacewell@gmail.com",
