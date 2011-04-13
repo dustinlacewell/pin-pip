@@ -50,14 +50,7 @@ class PinPipCommand(command.PinPluginCommandDelegator):
     Commands for managing dependencies with pip.
     '''
     command = 'pip'
-    def _get_subcommands():
-        subcoms = ['pip-requires', 'pip-meet']
-        commands = []
-        for com in subcoms:
-            obj = command._commands[com]
-            commands.append((com, obj.__doc__))
-        return commands
-    subcommands = _get_subcommands()
+    subcommands = ['pip-requires', 'pip-meet'] 
 command.register(PinPipCommand)
 
 class PipPinHook(PinHook):
