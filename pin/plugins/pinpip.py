@@ -7,22 +7,31 @@ from pin.event import eventhook
 from pin.plugin import PinHook, register
 from pin.util import get_settings_path, get_project_root
 
-class PinPipCommand(command.PinCommand):
-    command = 'pip'
-
-    def setup_parser(self, parser):
-        parser.add_argument('command')
+class PinPipRequiresCommand(command.PinCommand):
+    '''
+    print project's requirements.txt file.
+    '''
+    command = 'pip-requires'
 
     def execute(self, cwd, root):
         self.script = ''
-        commandmap = {
-            'requires': self.do_requires,
-            'meet': self.do_meet,
-        }
-        command = commandmap[self.options.command]
-        return command(cwd, root)
+        requirements_file = os.path.join(root, 'requirements.txt')
+        if os.path.isfile(requirements_file):
+            self.script = "cat %s;" % requirements_file
+            return True
         
-    def do_meet(self, cwd, root):
+    def write_script(self, file):
+        file.write(self.script)
+command.register(PinPipRequiresCommand)
+
+class PinPipMeetCommand(command.PinCommand):
+    '''
+    process project's requirements.txt file. (VirtualEnv aware)
+    '''
+    command = 'pip-meet'
+
+    def execute(self, cwd, root):
+        self.script = ''
         requirements_file = os.path.join(root, 'requirements.txt')
         if os.path.isfile(requirements_file):
             envpath = os.path.join(root, 'env')
@@ -31,16 +40,24 @@ class PinPipCommand(command.PinCommand):
                 venvopt = "-E %s " % envpath
             self.script = "pip install %s -r %s;" % (venvopt, requirements_file)
             return True
-
-    def do_requires(self, cwd, root):
-        requirements_file = os.path.join(root, 'requirements.txt')
-        if os.path.isfile(requirements_file):
-            self.script = "cat %s;" % requirements_file
-            return True
-
+        
     def write_script(self, file):
         file.write(self.script)
+command.register(PinPipMeetCommand)
 
+class PinPipCommand(command.PinPluginCommandDelegator):
+    '''
+    Commands for managing dependencies with pip.
+    '''
+    command = 'pip'
+    def _get_subcommands():
+        subcoms = ['pip-requires', 'pip-meet']
+        commands = []
+        for com in subcoms:
+            obj = command._commands[com]
+            commands.append((com, obj.__doc__))
+        return commands
+    subcommands = _get_subcommands()
 command.register(PinPipCommand)
 
 class PipPinHook(PinHook):
