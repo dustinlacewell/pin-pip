@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from pin import command
 from pin.config import config
 from pin.event import eventhook
-from pin.plugin import PinHook, register
+from pin.hook import PinHook, register
 from pin.util import get_settings_path, get_project_root
 
 class PinPipRequiresCommand(command.PinCommand):
