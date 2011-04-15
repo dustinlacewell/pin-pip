@@ -13,9 +13,9 @@ class PinPipRequiresCommand(command.PinCommand):
     '''
     command = 'pip-requires'
 
-    def execute(self, cwd, root):
+    def execute(self):
         self.script = ''
-        requirements_file = os.path.join(root, 'requirements.txt')
+        requirements_file = os.path.join(self.root, 'requirements.txt')
         if os.path.isfile(requirements_file):
             self.script = "cat %s;" % requirements_file
             return True
@@ -30,11 +30,11 @@ class PinPipMeetCommand(command.PinCommand):
     '''
     command = 'pip-meet'
 
-    def execute(self, cwd, root):
+    def execute(self):
         self.script = ''
-        requirements_file = os.path.join(root, 'requirements.txt')
+        requirements_file = os.path.join(self.root, 'requirements.txt')
         if os.path.isfile(requirements_file):
-            envpath = os.path.join(root, 'env')
+            envpath = os.path.join(self.root, 'env')
             venvopt = ''
             if os.path.isdir(envpath):
                 venvopt = "-E %s " % envpath
