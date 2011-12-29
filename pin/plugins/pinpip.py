@@ -1,17 +1,16 @@
 import os
-from argparse import ArgumentParser
 
-from pin import command
-from pin.config import config
+from pin import command, hook
 from pin.event import eventhook
-from pin.hook import PinHook, register
 from pin.util import get_settings_path, get_project_root
 
-class PinPipRequiresCommand(command.PinCommand):
-    '''
-    print project's requirements.txt file.
-    '''
+class PinPipRequiresCommand(command.PinSubCommand):
+    '''Print project's requirements.txt file'''
+
     command = 'pip-requires'
+
+    def setup_parser(self, parser):
+        parser.usage = "pin pip requires"
 
     def execute(self):
         self.script = ''
@@ -22,13 +21,15 @@ class PinPipRequiresCommand(command.PinCommand):
         
     def write_script(self, file):
         file.write(self.script)
+
 command.register(PinPipRequiresCommand)
 
-class PinPipMeetCommand(command.PinCommand):
-    '''
-    process project's requirements.txt file. (VirtualEnv aware)
-    '''
+class PinPipMeetCommand(command.PinSubCommand):
+    '''Process project's requirements.txt file. (VirtualEnv aware)'''
     command = 'pip-meet'
+
+    def setup_parser(self, parser):
+        parser.usage = "pin pip meet"
 
     def execute(self):
         self.script = ''
@@ -43,59 +44,64 @@ class PinPipMeetCommand(command.PinCommand):
         
     def write_script(self, file):
         file.write(self.script)
+
 command.register(PinPipMeetCommand)
 
-class PinPipCommand(command.PinPluginCommandDelegator):
+class PinPipCommand(command.PinDelegateCommand):
     '''
     Commands for managing dependencies with pip.
     '''
     command = 'pip'
-    subcommands = ['pip-requires', 'pip-meet'] 
+    subcommands = [PinPipMeetCommand, PinPipRequiresCommand]
+
+    def is_relevant(self):
+        return self.root and \
+            os.path.isfile(os.path.join(self.root, 'requirements.txt'))
+
+    def setup_parser(self, parser):
+        parser.usage = "pin pip [subcommand]"
+    
 command.register(PinPipCommand)
 
-class PipPinHook(PinHook):
-    '''
-    Processes a requirements.txt file with pip
-    '''
+class PipPinHook(hook.PinHook):
+    '''Adds pip argument to core init command'''
+
     name = "pip"
 
     def __init__(self):
         self.options = None
 
-    def isactive(self):
-        if self.options: # have we parsed options?
-            # were both required options present?
-            return self.options.pip
-        return False
+    @eventhook('init-post-parser')
+    def init_post_parser(self, parser):
+        '''Add argument to core init command'''
+        parser.add_argument('--pip', action='store_true', help='Process your requirements.txt (requires, --mkenv or --lnenv)')
 
     @eventhook('init-post-args')
-    # parse --pip flag
-    def postargs(self, args):
-        parser = ArgumentParser()
-        parser.add_argument('--venv', action='store_true')
-        parser.add_argument('--pip', action='store_true')
-        self.options, extargs = parser.parse_known_args(args)
+    def init_post_args(self, args, options):
+        '''Save init parsed options for later'''
+        self.options = options
 
     @eventhook('init-post-exec')
-    # save project root
-    def getroot(self, cwd, root):
-        self.options.root = cwd
+    def init_post_exec(self, cwd, root):
+        '''Save path of new project'''
+        self.options.root = root
 
     @eventhook('venv-post-create')
-    def venvpath(self, path):
+    def venv_post_create(self, path):
+        '''Save path of new virtualenv'''
         # only install if options were present
-        if self.active and self.options.venv: 
-            self.options.venv = path
+        if self.options.pip and (self.options.mkenv or self.options.lnenv): 
+            self.options.venvpath = path
+        else:
+            self.options.venvpath = None
 
     @eventhook('init-post-script')
-    # install the requirements file
-    def install_reqs(self, file):
-        if self.active:
-            venvopt = ''
-            if self.options.venv:
-                venvopt = "-E %s" % self.options.venv
+    def init_post_script(self, file):
+        '''Write shell script to process requirements file using new virtualenv'''
+        if self.options.pip and getattr(self.options, 'venvpath', None):
+            venvopt = "-E %s" % self.options.venvpath
             file.write("pip install %s -r %s;" % (venvopt, 
                                           os.path.join(self.options.root,
                                                        'requirements.txt')))
 
-register(PipPinHook)
+hook.register(PipPinHook)
